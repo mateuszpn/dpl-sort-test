@@ -7,7 +7,6 @@
 // oneDPL headers should be included before standard headers
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
-#include <oneapi/dpl/iterator>
 
 #include <sycl/sycl.hpp>
 #include <iostream>
@@ -35,7 +34,7 @@ void generate_random(span<T> &v, std::size_t n, std::size_t bound = 100) {
 int main(int argc, char **argv) {
 
   using T = int;
-  std::vector<std::size_t> sizes = { 4, 7, 23 };
+  std::vector<std::size_t> sizes = { 4, 7, 11, 17, 23, 121 };
 
   // auto policy = oneapi::dpl::execution::dpcpp_default;
   auto policy = oneapi::dpl::execution::make_device_policy(sycl::queue());
@@ -56,13 +55,25 @@ int main(int argc, char **argv) {
 
     generate_random(sv, n, 100);
 
-    std::cout << rank << ":   Unsorted ";
+    std::cout << rank << ":  Input vec ";
     for (int i = 0; i < n; i++) {
       std::cout << sv[i] << ", ";
     }
     std::cout << "\n";
 
+    /* never worked with MPI */
     oneapi::dpl::sort(policy, sv.begin(), sv.end());
+    /*
+    worked with
+      auto policy = oneapi::dpl::execution::seq
+      auto policy = oneapi::dpl::execution::unseq
+    not worked with
+      auto policy =
+        oneapi::dpl::execution::make_device_policy(sycl::queue()); 
+      auto policy =
+        oneapi::dpl::execution::dpcpp_default;
+    */
+    // std::sort(policy, sv.begin(), sv.end());
 
     bool sorted = true;
     for (int i = 0; i < n; i++) {

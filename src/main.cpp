@@ -7,6 +7,7 @@
 // oneDPL headers should be included before standard headers
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
+#include <oneapi/dpl/iterator>
 
 #include <sycl/sycl.hpp>
 #include <iostream>
@@ -62,7 +63,7 @@ int main(int argc, char **argv) {
     std::cout << "\n";
 
     /* never worked with MPI */
-    oneapi::dpl::sort(policy, sv.begin(), sv.end());
+    oneapi::dpl::sort(policy, oneapi::dpl::begin(sv), oneapi::dpl::end(sv));
     /*
     worked with
       auto policy = oneapi::dpl::execution::seq

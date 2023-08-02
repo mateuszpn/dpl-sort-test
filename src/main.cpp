@@ -9,24 +9,17 @@
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/iterator>
 
-#include <sycl/sycl.hpp>
+// #include "/opt/hpc_software/tools/compilers/gnu/12.1.0/include/c++/12.1.0/ranges"
 #include <iostream>
 
-#include<mpi.h>
+#include <sycl/sycl.hpp>
+#include <mpi.h>
 
-using namespace sycl;
-using namespace std;
+using namespace __nanorange::nano ;
 
-template <typename T>
-// void generate_random(T *v, std::size_t n, std::size_t bound = 100) {
-void generate_random(std::vector<T> &v, std::size_t n, std::size_t bound = 100) {
-  for (std::size_t i = 0; i < n; i++) {
-    v[i] = lrand48() % bound;
-  }
-}
-
-template <typename T>
-void generate_random(span<T> &v, std::size_t n, std::size_t bound = 100) {
+    template <typename T>
+    void generate_random(std::vector<T> &v, std::size_t n,
+                         std::size_t bound = 100) {
   for (std::size_t i = 0; i < n; i++) {
     v[i] = lrand48() % bound;
   }
@@ -35,13 +28,14 @@ void generate_random(span<T> &v, std::size_t n, std::size_t bound = 100) {
 int main(int argc, char **argv) {
 
   using T = int;
-  std::vector<std::size_t> sizes = { 4, 7, 11, 17, 23, 121 };
+  std::vector<std::size_t> sizes = {4, 7, 11, 17, 23, 121};
 
   // auto policy = oneapi::dpl::execution::dpcpp_default;
   auto policy = oneapi::dpl::execution::make_device_policy(sycl::queue());
 
   int rank = 0, size = 0;
   MPI_Init(&argc, &argv);
+
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_rank(MPI_COMM_WORLD, &size);
 
@@ -49,10 +43,6 @@ int main(int argc, char **argv) {
     std::cout << rank << ": >>> Test size " << n << std::endl;
 
     std::vector<T> sv(n);
-
-    // T *s = std::allocator<T>().allocate(n);
-    // T *s = sycl::usm_allocator<T, sycl::usm::alloc::shared, 0>(sycl::queue()).allocate(n); /* aka: mhp::default_allocator */
-    // auto sv = span<T>(s, n);
 
     generate_random(sv, n, 100);
 
@@ -62,32 +52,12 @@ int main(int argc, char **argv) {
     }
     std::cout << "\n";
 
-    /* never worked with MPI */
-    oneapi::dpl::sort(policy, oneapi::dpl::begin(sv), oneapi::dpl::end(sv));
-    /*
-    worked with
-      auto policy = oneapi::dpl::execution::seq
-      auto policy = oneapi::dpl::execution::unseq
-    not worked with
-      auto policy =
-        oneapi::dpl::execution::make_device_policy(sycl::queue()); 
-      auto policy =
-        oneapi::dpl::execution::dpcpp_default;
-    */
-    // std::sort(policy, sv.begin(), sv.end());
+    ranges::subrange<int *, int *, ranges::subrange_kind::sized> segment =
+        ranges::subrange(sv.data(), sv.data() + sv.size(), n);
 
-    bool sorted = true;
-    for (int i = 0; i < n; i++) {
-      if(sv[i-1] > sv[i]) {
-        sorted = false;
-        break;
-      }
-    }
+    oneapi::dpl::sort(policy, oneapi::dpl::begin(segment), oneapi::dpl::end(segment));
 
-    if (sorted)
-      std::cout << rank << ":     Sorted ";
-    else
-      std::cout << rank << ": NOT SORTED ";
+    std::cout << rank << ": Sorted ";
 
     for (int i = 0; i < n; i++) {
       std::cout << sv[i] << ", ";
@@ -96,7 +66,5 @@ int main(int argc, char **argv) {
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    // std::allocator<T>().deallocate(s, n);
-    // sycl::usm_allocator<T, sycl::usm::alloc::shared, 0>(q).deallocate(s, n);
   }
 }

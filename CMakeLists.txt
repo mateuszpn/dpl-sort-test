@@ -3,13 +3,13 @@ set(CMAKE_C_COMPILER "icx")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/opt/intel/oneapi/dpl/latest/linux/include -I/opt/intel/oneapi/mpi/latest/include")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl")
 
-#include(FetchContent)
+include(FetchContent)
 
-#FetchContent_Declare(
-#  range-v3
-#  GIT_REPOSITORY https://github.com/BenBrock/range-v3.git
-#  GIT_TAG 5300fe3)
-#FetchContent_MakeAvailable(range-v3)
+FetchContent_Declare(
+  range-v3
+  GIT_REPOSITORY https://github.com/BenBrock/range-v3.git
+  GIT_TAG 5300fe3)
+FetchContent_MakeAvailable(range-v3)
 
 
 find_package(MPI REQUIRED)

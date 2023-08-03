@@ -4,22 +4,20 @@
 // SPDX-License-Identifier: MIT
 // =============================================================
 
-// oneDPL headers should be included before standard headers
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/iterator>
 
-// #include "/opt/hpc_software/tools/compilers/gnu/12.1.0/include/c++/12.1.0/ranges"
 #include <iostream>
 
 #include <sycl/sycl.hpp>
 #include <mpi.h>
 
-using namespace __nanorange::nano ;
+using namespace __nanorange::nano;
 
-    template <typename T>
-    void generate_random(std::vector<T> &v, std::size_t n,
-                         std::size_t bound = 100) {
+template <typename R>
+void generate_random(R &v, std::size_t n,
+                     std::size_t bound = 100) {
   for (std::size_t i = 0; i < n; i++) {
     v[i] = lrand48() % bound;
   }
@@ -28,10 +26,10 @@ using namespace __nanorange::nano ;
 int main(int argc, char **argv) {
 
   using T = int;
-  std::vector<std::size_t> sizes = {4, 7, 11, 17, 23, 121};
+  std::vector<std::size_t> sizes = {4, 7, 11, 17, 23, 121, 1234};
 
-  // auto policy = oneapi::dpl::execution::dpcpp_default;
-  auto policy = oneapi::dpl::execution::make_device_policy(sycl::queue());
+  auto policy = oneapi::dpl::execution::make_device_policy(
+      sycl::queue());
 
   int rank = 0, size = 0;
   MPI_Init(&argc, &argv);
@@ -46,23 +44,21 @@ int main(int argc, char **argv) {
 
     generate_random(sv, n, 100);
 
-    std::cout << rank << ":  Input vec ";
-    for (int i = 0; i < n; i++) {
-      std::cout << sv[i] << ", ";
-    }
-    std::cout << "\n";
-
+    /* the specific type we are having trouble with */
     ranges::subrange<int *, int *, ranges::subrange_kind::sized> segment =
         ranges::subrange(sv.data(), sv.data() + sv.size(), n);
 
     oneapi::dpl::sort(policy, oneapi::dpl::begin(segment), oneapi::dpl::end(segment));
 
-    std::cout << rank << ": Sorted ";
-
+    bool sorted = true;
     for (int i = 0; i < n; i++) {
-      std::cout << sv[i] << ", ";
+      if ((i > 0) && sv[i-1] >= sv[i])
+        sorted = false;
     }
-    std::cout << "\n";
+    if (!sorted) 
+      std::cout << "NOT SORTED\n";
+    else
+      std::cout << "SORTED\n";
 
     MPI_Barrier(MPI_COMM_WORLD);
 
